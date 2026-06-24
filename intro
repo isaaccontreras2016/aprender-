@@ -1,0 +1,1518 @@
+import React, { useState, useMemo } from 'react';
+
+// --- Base de Datos Inicial de Libros ---
+const LIBROS_INICIALES = [
+  {
+    id: 1,
+    titulo: "Ingeniería de Software",
+    autor: "Ian Sommerville",
+    isbn: "978-607-32-2244-0",
+    categoria: "Ingeniería",
+    stock: 5,
+    sinopsis: "Guía fundamental para el diseño, desarrollo e implementación de sistemas de software confiables, escalables y eficientes, ideal para materias de desarrollo.",
+    ubicación: "Estante A-4, Piso 2",
+    edicion: "9na Edición"
+  },
+  {
+    id: 2,
+    titulo: "Sistemas de Bases de Datos",
+    autor: "Abraham Silberschatz",
+    isbn: "978-84-481-4644-3",
+    categoria: "Ingeniería",
+    stock: 0,
+    sinopsis: "Conceptos fundamentales para la gestión, diseño y estructuración de bases de datos relacionales y no relacionales en entornos empresariales.",
+    ubicación: "Estante B-1, Piso 2",
+    edicion: "6ta Edición"
+  },
+  {
+    id: 3,
+    titulo: "Redes de Computadoras",
+    autor: "Andrew S. Tanenbaum",
+    isbn: "978-607-32-1132-1",
+    categoria: "Ingeniería",
+    stock: 3,
+    sinopsis: "Explicación detallada de los protocolos de redes y comunicaciones modernas, cubriendo desde fibra óptica hasta redes inalámbricas.",
+    ubicación: "Estante A-2, Piso 2",
+    edicion: "5ta Edición"
+  },
+  {
+    id: 4,
+    titulo: "Don Quijote de la Mancha",
+    autor: "Miguel de Cervantes",
+    isbn: "978-84-206-6111-7",
+    categoria: "Literatura",
+    stock: 2,
+    sinopsis: "La obra cumbre de la literatura en español que relata las aventuras del ingenioso hidalgo Don Quijote y su fiel escudero Sancho Panza.",
+    ubicación: "Estante C-1, Piso 1",
+    edicion: "Edición Conmemorativa"
+  },
+  {
+    id: 5,
+    titulo: "Física Universitaria",
+    autor: "Sears y Zemansky",
+    isbn: "978-607-32-2190-0",
+    categoria: "Ciencias",
+    stock: 4,
+    sinopsis: "Texto fundamental de física que aborda mecánica, electromagnetismo, termodinámica y óptica con claridad matemática y pedagógica.",
+    ubicación: "Estante D-3, Piso 1",
+    edicion: "13va Edición"
+  },
+  {
+    id: 6,
+    titulo: "Cien Años de Soledad",
+    autor: "Gabriel García Márquez",
+    isbn: "978-030-74-7472-8",
+    categoria: "Literatura",
+    stock: 1,
+    sinopsis: "La obra cumbre del realismo mágico que detalla la historia de varias generaciones de la familia Buendía en el pueblo de Macondo.",
+    ubicación: "Estante C-3, Piso 1",
+    edicion: "Edición Conmemorativa"
+  },
+  {
+    id: 7,
+    titulo: "Álgebra Lineal y sus Aplicaciones",
+    autor: "David C. Lay",
+    isbn: "978-607-32-1394-3",
+    categoria: "Ciencias",
+    stock: 3,
+    sinopsis: "Un libro de texto clásico sobre vectores, matrices, espacios vectoriales y transformaciones lineales con múltiples ejemplos prácticos.",
+    ubicación: "Estante D-1, Piso 1",
+    edicion: "4ta Edición"
+  }
+];
+
+// --- Estudiantes Registrados en la base de datos ---
+const ESTUDIANTES_INICIALES = [
+  { cedula: "0912345678", nombre: "Juan Pérez Solís", carrera: "Ingeniería de Software", estado: "Activo" },
+  { cedula: "0987654321", nombre: "María Castro Santos", carrera: "Tecnologías de la Información", estado: "Activo" },
+  { cedula: "0955443322", nombre: "Carlos Ortiz Mora", carrera: "Ciencias de la Educación", estado: "Inactivo" },
+  { cedula: "0944332211", nombre: "Anahí Domínguez Vera", carrera: "Licenciatura en Enfermería", estado: "Activo" }
+];
+
+export default function App() {
+  // --- Estados de Datos Centralizados ---
+  const [libros, setLibros] = useState(LIBROS_INICIALES);
+  const [estudiantes, setEstudiantes] = useState(ESTUDIANTES_INICIALES);
+  
+  // Base de datos de Préstamos unificada e interactiva
+  const [prestamos, setPrestamos] = useState([
+    {
+      id: 101,
+      estudianteCedula: "0912345678", // Juan Pérez Solís
+      libroIsbn: "978-607-32-1132-1", // Redes de Computadoras
+      titulo: "Introducción a la Programación",
+      fechaVencimiento: "2026-06-28",
+      estado: "Al día"
+    },
+    {
+      id: 102,
+      estudianteCedula: "0912345678", // Juan Pérez Solís
+      libroIsbn: "978-607-32-2244-0", // Ingeniería de Software
+      titulo: "Cálculo Integral",
+      fechaVencimiento: "2026-06-15",
+      estado: "Retrasado"
+    },
+    {
+      id: 103,
+      estudianteCedula: "0987654321", // María Castro Santos
+      libroIsbn: "978-84-481-4644-3", // Sistemas de Bases de Datos
+      titulo: "Sistemas de Bases de Datos",
+      fechaVencimiento: "2026-07-02",
+      estado: "Al día"
+    }
+  ]);
+
+  // --- Logs de Auditoría del Bibliotecario ---
+  const [logs, setLogs] = useState([
+    { hora: "12:30", accion: "Bibliotecario modificó el stock del libro 'Sistemas de Bases de Datos' de 1 a 0 unidades." },
+    { hora: "11:15", accion: "Estudiante María Castro Santos solicitó préstamo de 'Sistemas de Bases de Datos'." },
+    { hora: "08:45", accion: "Se actualizó la base de datos de matrículas estudiantiles del período académico vigente." }
+  ]);
+
+  // --- Estados de Navegación y Roles ---
+  const [rolActivo, setRolActivo] = useState('estudiante'); // 'estudiante' o 'bibliotecario'
+  const [subModuloAdmin, setSubModuloAdmin] = useState('prestamos'); // 'prestamos', 'catalogo', 'usuarios'
+  const [notificacion, setNotificacion] = useState(null);
+
+  // --- Estados del Buscador de la Vista de Estudiante ---
+  const [busqueda, setBusqueda] = useState('');
+  const [busquedaAplicada, setBusquedaAplicada] = useState('');
+  const [tiempoBusqueda, setTiempoBusqueda] = useState(0.04);
+  const [filtros, setFiltros] = useState({
+    Ingenieria: true,
+    Literatura: false,
+    Ciencias: false,
+    Disponible: false
+  });
+  const [libroDetalle, setLibroDetalle] = useState(null);
+
+  // --- Estados del Formulario de Registro Express (Admin - 3 clics) ---
+  const [idEstudianteInput, setIdEstudianteInput] = useState('0912345678');
+  const [estudianteValidado, setEstudianteValidado] = useState(null);
+  
+  const [isbnInput, setIsbnInput] = useState('978-607-32-2244-0');
+  const [libroValidado, setLibroValidado] = useState(null);
+  
+  const [fechaDevolucion, setFechaDevolucion] = useState('2026-07-10');
+
+  // --- Variables para Agregar Libros ---
+  const [nuevoLibro, setNuevoLibro] = useState({
+    titulo: '', autor: '', isbn: '', categoria: 'Ingeniería', stock: 1, sinopsis: '', ubicación: 'Estante A-1, Piso 2', edicion: '1ra Edición'
+  });
+
+  // --- Variables para Agregar Estudiantes ---
+  const [nuevoEstudiante, setNuevoEstudiante] = useState({
+    cedula: '', nombre: '', carrera: 'Ingeniería de Software', estado: 'Activo'
+  });
+
+  // --- Función Auxiliar para Notificaciones ---
+  const mostrarNotificacion = (mensaje, tipo = 'exito') => {
+    setNotificacion({ mensaje, tipo });
+    setTimeout(() => setNotificacion(null), 4000);
+  };
+
+  // --- Función Auxiliar para Auditoría ---
+  const agregarLog = (accion) => {
+    const ahora = new Date();
+    const horaFormateada = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setLogs(prev => [{ hora: horaFormateada, accion }, ...prev]);
+  };
+
+  // --- Filtrado Inteligente de Libros (Estudiante) ---
+  const librosFiltrados = useMemo(() => {
+    const inicio = performance.now();
+    const resultado = libros.filter(libro => {
+      // Coincidencia con barra de búsqueda única
+      const matchesSearch = busquedaAplicada === '' || 
+        libro.titulo.toLowerCase().includes(busquedaAplicada.toLowerCase()) ||
+        libro.autor.toLowerCase().includes(busquedaAplicada.toLowerCase()) ||
+        libro.isbn.includes(busquedaAplicada);
+
+      // Coincidencia con filtros de categorías
+      const algunaCategoriaActiva = filtros.Ingenieria || filtros.Literatura || filtros.Ciencias;
+      let matchesCategoria = true;
+      if (algunaCategoriaActiva) {
+        matchesCategoria = 
+          (filtros.Ingenieria && libro.categoria === 'Ingeniería') ||
+          (filtros.Literatura && libro.categoria === 'Literatura') ||
+          (filtros.Ciencias && libro.categoria === 'Ciencias');
+      }
+
+      // Filtro de sólo disponibles (stock mayor a cero)
+      const matchesDisponible = !filtros.Disponible || libro.stock > 0;
+
+      return matchesSearch && matchesCategoria && matchesDisponible;
+    });
+
+    const fin = performance.now();
+    // Simular un tiempo realista basado en la carga (entre 0.01s y 1.5s ficticio para calzar con el mockup)
+    setTiempoBusqueda(parseFloat(((fin - inicio) / 1000 + 0.04).toFixed(2)));
+    return resultado;
+  }, [libros, busquedaAplicada, filtros]);
+
+  // --- Préstamos filtrados para el estudiante en sesión (Juan Pérez) ---
+  const prestamosEstudianteActivo = useMemo(() => {
+    return prestamos.filter(p => p.estudianteCedula === "0912345678");
+  }, [prestamos]);
+
+  // --- Acciones del Estudiante ---
+  const handleBuscarEstudiante = (e) => {
+    e.preventDefault();
+    setBusquedaAplicada(busqueda);
+    mostrarNotificacion(`Catálogo actualizado para: "${busqueda || 'Todos los libros'}"`, 'info');
+  };
+
+  const toggleFiltro = (filtroKey) => {
+    setFiltros(prev => ({ ...prev, [filtroKey]: !prev[filtroKey] }));
+  };
+
+  const solicitarPrestamoEstudiante = (libro) => {
+    if (libro.stock <= 0) {
+      mostrarNotificacion(`El libro "${libro.titulo}" no cuenta con copias disponibles.`, 'error');
+      return;
+    }
+
+    // Comprobar si el estudiante ya tiene este libro prestado
+    const yaPrestado = prestamos.some(p => p.estudianteCedula === "0912345678" && p.titulo === libro.titulo);
+    if (yaPrestado) {
+      mostrarNotificacion(`Ya tienes un préstamo activo o pendiente para "${libro.titulo}".`, 'info');
+      return;
+    }
+
+    // Actualizar stock del libro
+    setLibros(prev => prev.map(l => {
+      if (l.id === libro.id) {
+        return { ...l, stock: l.stock - 1 };
+      }
+      return l;
+    }));
+
+    // Registrar préstamo
+    const hoy = new Date();
+    hoy.setDate(hoy.getDate() + 15);
+    const fechaVencimiento = hoy.toISOString().split('T')[0];
+
+    const nuevoP = {
+      id: Date.now(),
+      estudianteCedula: "0912345678",
+      libroIsbn: libro.isbn,
+      titulo: libro.titulo,
+      fechaVencimiento,
+      estado: "Al día"
+    };
+
+    setPrestamos(prev => [nuevoP, ...prev]);
+    mostrarNotificacion(`¡Préstamo de "${libro.titulo}" solicitado! Acércate al módulo con tu ID.`, 'exito');
+    agregarLog(`Juan Pérez Solís solicitó en línea: "${libro.titulo}" (Stock restante: ${libro.stock - 1})`);
+  };
+
+  const devolverPrestamoEstudiante = (id, titulo) => {
+    // Eliminar del array de préstamos
+    setPrestamos(prev => prev.filter(p => p.id !== id));
+    
+    // Regresar stock
+    setLibros(prev => prev.map(l => {
+      if (l.titulo === titulo) {
+        return { ...l, stock: l.stock + 1 };
+      }
+      return l;
+    }));
+
+    mostrarNotificacion(`Has devuelto "${titulo}" virtualmente. Entrega el físico en ventanilla.`, 'exito');
+    agregarLog(`Juan Pérez Solís devolvió: "${titulo}"`);
+  };
+
+  const renovarPrestamoEstudiante = (id, titulo) => {
+    setPrestamos(prev => prev.map(p => {
+      if (p.id === id) {
+        const f = new Date(p.fechaVencimiento);
+        f.setDate(f.getDate() + 7);
+        return { ...p, fechaVencimiento: f.toISOString().split('T')[0], estado: "Al día" };
+      }
+      return p;
+    }));
+    mostrarNotificacion(`Plazo del libro "${titulo}" extendido por 7 días.`, 'info');
+    agregarLog(`Se renovó plazo para: "${titulo}" por el estudiante Juan Pérez.`);
+  };
+
+
+  // --- Acciones de Administración (Bibliotecario) ---
+
+  // 1. Validar Estudiante (Paso 1 del Registro de Préstamo)
+  const handleValidarEstudianteAdmin = () => {
+    const est = estudiantes.find(e => e.cedula === idEstudianteInput);
+    if (est) {
+      if (est.estado === 'Inactivo') {
+        mostrarNotificacion(`Estudiante bloqueado o inactivo por mora académica.`, 'error');
+        setEstudianteValidado(null);
+      } else {
+        setEstudianteValidado(est);
+        mostrarNotificacion(`Estudiante verificado: ${est.nombre}`, 'exito');
+      }
+    } else {
+      mostrarNotificacion(`Identificación no registrada en el sistema de matrículas.`, 'error');
+      setEstudianteValidado(null);
+    }
+  };
+
+  // 2. Validar Libro (Paso 2 del Registro de Préstamo)
+  const handleValidarLibroAdmin = () => {
+    const lib = libros.find(l => l.isbn === isbnInput);
+    if (lib) {
+      if (lib.stock <= 0) {
+        mostrarNotificacion(`No hay stock físico de "${lib.titulo}".`, 'error');
+        setLibroValidado(null);
+      } else {
+        setLibroValidado(lib);
+        mostrarNotificacion(`Libro verificado: ${lib.titulo} (Copias: ${lib.stock})`, 'exito');
+      }
+    } else {
+      mostrarNotificacion(`Código ISBN no encontrado en el catálogo de biblioteca.`, 'error');
+      setLibroValidado(null);
+    }
+  };
+
+  // 3. Procesar Préstamo Final (Paso 3 del Registro de Préstamo)
+  const handleProcesarPrestamoAdmin = (e) => {
+    e.preventDefault();
+    if (!estudianteValidado || !libroValidado) {
+      mostrarNotificacion(`Por favor, complete los pasos de validación 1 y 2.`, 'error');
+      return;
+    }
+
+    // Descontar una unidad del catálogo
+    setLibros(prev => prev.map(l => {
+      if (l.id === libroValidado.id) {
+        return { ...l, stock: l.stock - 1 };
+      }
+      return l;
+    }));
+
+    // Insertar nuevo registro de préstamo
+    const nuevoRegistro = {
+      id: Date.now(),
+      estudianteCedula: estudianteValidado.cedula,
+      libroIsbn: libroValidado.isbn,
+      titulo: libroValidado.titulo,
+      fechaVencimiento: fechaDevolucion,
+      estado: "Al día"
+    };
+
+    setPrestamos(prev => [nuevoRegistro, ...prev]);
+    agregarLog(`Préstamo registrado por bibliotecario: "${libroValidado.titulo}" entregado a ${estudianteValidado.nombre}.`);
+    mostrarNotificacion(`¡Registro exitoso! Préstamo procesado en 3 clics.`, 'exito');
+
+    // Resetear formulario para siguientes flujos
+    setEstudianteValidado(null);
+    setLibroValidado(null);
+  };
+
+  // Agregar nuevo libro físico al catálogo
+  const handleCrearLibroAdmin = (e) => {
+    e.preventDefault();
+    if (!nuevoLibro.titulo || !nuevoLibro.autor || !nuevoLibro.isbn) {
+      mostrarNotificacion("Por favor, rellene los campos obligatorios.", "error");
+      return;
+    }
+
+    const nuevo = {
+      ...nuevoLibro,
+      id: Date.now()
+    };
+
+    setLibros(prev => [nuevo, ...prev]);
+    agregarLog(`Bibliotecario añadió un nuevo texto al catálogo: "${nuevo.titulo}" (${nuevo.stock} unidades).`);
+    mostrarNotificacion(`Libro "${nuevo.titulo}" registrado correctamente en el sistema.`, 'exito');
+
+    // Limpiar formulario
+    setNuevoLibro({
+      titulo: '', autor: '', isbn: '', categoria: 'Ingeniería', stock: 1, sinopsis: '', ubicación: 'Estante A-1, Piso 2', edicion: '1ra Edición'
+    });
+  };
+
+  // Agregar nuevo estudiante al padrón
+  const handleCrearEstudianteAdmin = (e) => {
+    e.preventDefault();
+    if (!nuevoEstudiante.cedula || !nuevoEstudiante.nombre) {
+      mostrarNotificacion("Complete cédula y nombre del estudiante.", "error");
+      return;
+    }
+
+    if (estudiantes.some(est => est.cedula === nuevoEstudiante.cedula)) {
+      mostrarNotificacion("Este número de cédula ya se encuentra registrado.", "error");
+      return;
+    }
+
+    setEstudiantes(prev => [...prev, nuevoEstudiante]);
+    agregarLog(`Se registró nueva matrícula de biblioteca para: ${nuevoEstudiante.nombre}`);
+    mostrarNotificacion(`Estudiante ${nuevoEstudiante.nombre} agregado con éxito.`, 'exito');
+
+    setNuevoEstudiante({
+      cedula: '', nombre: '', carrera: 'Ingeniería de Software', estado: 'Activo'
+    });
+  };
+
+  // Editar stock de forma rápida
+  const modificarStockDirecto = (id, nuevoStock) => {
+    const valorNum = Math.max(0, parseInt(nuevoStock) || 0);
+    setLibros(prev => prev.map(l => {
+      if (l.id === id) {
+        agregarLog(`Bibliotecario editó directamente el stock de "${l.titulo}" a ${valorNum} unidades.`);
+        return { ...l, stock: valorNum };
+      }
+      return l;
+    }));
+  };
+
+  // Cancelar un préstamo desde el módulo administrativo
+  const cancelarPrestamoAdmin = (id, titulo, estudianteNombre) => {
+    setPrestamos(prev => prev.filter(p => p.id !== id));
+    setLibros(prev => prev.map(l => {
+      if (l.titulo === titulo) {
+        return { ...l, stock: l.stock + 1 };
+      }
+      return l;
+    }));
+    mostrarNotificacion(`Préstamo devuelto/cancelado para ${estudianteNombre}.`, 'info');
+    agregarLog(`Bibliotecario cerró el préstamo del libro "${titulo}" de ${estudianteNombre}.`);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col selection:bg-emerald-200 selection:text-emerald-950">
+      
+      {/* --- BANNER DE NOTIFICACIÓN FLOTANTE --- */}
+      {notificacion && (
+        <div className="fixed top-5 right-5 z-50 animate-bounce shadow-2xl max-w-sm rounded-2xl p-4 flex items-start gap-3 transition-all duration-300 border bg-white">
+          {notificacion.tipo === 'exito' && (
+            <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          )}
+          {notificacion.tipo === 'info' && (
+            <div className="bg-blue-100 text-blue-600 p-2.5 rounded-xl">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          )}
+          {notificacion.tipo === 'error' && (
+            <div className="bg-red-100 text-red-600 p-2.5 rounded-xl">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          )}
+          <div>
+            <p className="font-extrabold text-xs text-slate-900 uppercase tracking-wide">Notificación de Biblioteca</p>
+            <p className="text-xs text-slate-600 mt-1">{notificacion.mensaje}</p>
+          </div>
+        </div>
+      )}
+
+      {/* --- CABECERA PRINCIPAL (Estilo Institucional UNEMI) --- */}
+      <header className="bg-gradient-to-r from-blue-900 to-emerald-800 text-white shadow-lg sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4">
+          
+          {/* Isologo UNEMI y Título del Sistema */}
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-2 rounded-xl shadow-inner flex items-center justify-center">
+              <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" rx="16" fill="#0A3054"/>
+                <path d="M25 30H75V40H25V30Z" fill="#10B981"/>
+                <path d="M25 45H75V55H25V45Z" fill="#FFFFFF"/>
+                <path d="M25 60H55V70H25V60Z" fill="#10B981"/>
+                <circle cx="68" cy="65" r="5" fill="#FFFFFF"/>
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-emerald-500 text-[9px] font-black text-white px-1.5 py-0.5 rounded tracking-wider uppercase">UNEMI</span>
+                <span className="text-xs text-emerald-200 font-medium">Universidad Estatal de Milagro</span>
+              </div>
+              <h1 className="text-lg md:text-xl font-black tracking-tight uppercase">Sistema Web de Biblioteca</h1>
+            </div>
+          </div>
+
+          {/* Menú Superior Interactivo de Roles */}
+          <div className="flex flex-wrap items-center gap-4">
+            
+            {/* Switcheador de Rol de Usuario */}
+            <div className="bg-slate-950/40 p-1 rounded-xl flex items-center border border-white/10 shadow-inner">
+              <button
+                onClick={() => { setRolActivo('estudiante'); mostrarNotificacion("Acceso: Vista de Estudiante", "info"); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  rolActivo === 'estudiante' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Vista Estudiante
+              </button>
+              <button
+                onClick={() => { setRolActivo('bibliotecario'); mostrarNotificacion("Acceso: Vista Bibliotecario / Admin", "info"); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  rolActivo === 'bibliotecario' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                </svg>
+                Bibliotecario (Admin)
+              </button>
+            </div>
+
+            {/* Avatar Informativo de Sesión */}
+            <div className="flex items-center gap-2.5 text-xs">
+              <div className="w-8 h-8 rounded-xl bg-slate-800 text-white font-extrabold flex items-center justify-center border border-white/20">
+                {rolActivo === 'estudiante' ? 'JP' : 'AD'}
+              </div>
+              <div className="hidden md:block text-left leading-tight">
+                <p className="text-[9px] text-emerald-300 font-bold uppercase tracking-wider">
+                  {rolActivo === 'estudiante' ? 'Matrícula Activa' : 'Personal Administrativo'}
+                </p>
+                <p className="font-extrabold text-white">
+                  {rolActivo === 'estudiante' ? 'Juan Pérez Solís' : 'Administrador de Biblioteca'}
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </header>
+
+      {/* --- MENSAJE INFORMATIVO DE ROL ACTIVO --- */}
+      <div className={`py-2 px-4 text-center text-xs font-semibold shadow-inner ${
+        rolActivo === 'estudiante' 
+          ? 'bg-blue-50/80 text-blue-700 border-b border-blue-200' 
+          : 'bg-amber-50/80 text-amber-800 border-b border-amber-200'
+      }`}>
+        {rolActivo === 'estudiante' ? (
+          <span>📖 Estás navegando como <strong>Estudiante</strong>. Consulta existencias de libros en tiempo real y pide préstamos en línea.</span>
+        ) : (
+          <span>💻 Estás en el <strong>Panel de Bibliotecario</strong>. Revisa stock físico, registra entregas en 3 clics y gestiona sanciones.</span>
+        )}
+      </div>
+
+      {/* --- VISTA: ESTUDIANTE --- */}
+      {rolActivo === 'estudiante' && (
+        <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Lado Izquierdo + Centro: Buscador y Catálogo */}
+          <section className="lg:col-span-2 space-y-6">
+            
+            {/* Formulario de Búsqueda de Libros */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/85">
+              <h2 className="text-sm font-black text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscador Único de Biblioteca (UNEMI)
+              </h2>
+
+              <form onSubmit={handleBuscarEstudiante} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                      placeholder="Digite Título del libro, Autor de referencia o código ISBN..."
+                      className="w-full bg-slate-50 pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-xs"
+                    />
+                    <span className="absolute left-4 top-3.5 text-slate-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </span>
+                  </div>
+                  <button
+                    type="submit"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-3 rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2 whitespace-nowrap uppercase tracking-wider"
+                  >
+                    Buscar Libro
+                  </button>
+                </div>
+
+                {/* Filtros de Categorías */}
+                <div className="pt-2">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-2">Filtros Rápidos</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleFiltro('Ingenieria')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                        filtros.Ingenieria 
+                          ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input type="checkbox" checked={filtros.Ingenieria} readOnly className="rounded text-blue-600 accent-blue-600" />
+                      Ingeniería
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFiltro('Literatura')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                        filtros.Literatura 
+                          ? 'bg-purple-50 border-purple-200 text-purple-700 font-bold' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input type="checkbox" checked={filtros.Literatura} readOnly className="rounded text-purple-600 accent-purple-600" />
+                      Literatura
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFiltro('Ciencias')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                        filtros.Ciencias 
+                          ? 'bg-amber-50 border-amber-200 text-amber-700 font-bold' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input type="checkbox" checked={filtros.Ciencias} readOnly className="rounded text-amber-600 accent-amber-600" />
+                      Ciencias
+                    </button>
+
+                    <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFiltro('Disponible')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                        filtros.Disponible 
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' 
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input type="checkbox" checked={filtros.Disponible} readOnly className="rounded text-emerald-600 accent-emerald-600" />
+                      Disponible (En Stock)
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Resultados de Búsqueda de Libros */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center px-1">
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Resultados de Búsqueda</h3>
+                  <p className="text-[10px] text-slate-500">
+                    Búsqueda completada en <span className="font-semibold text-emerald-600">{tiempoBusqueda}</span> segundos
+                  </p>
+                </div>
+                <span className="bg-slate-200 text-slate-800 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                  {librosFiltrados.length} {librosFiltrados.length === 1 ? 'libro' : 'libros'}
+                </span>
+              </div>
+
+              {librosFiltrados.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {librosFiltrados.map((libro) => (
+                    <div 
+                      key={libro.id} 
+                      className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden"
+                    >
+                      <div className="p-4 space-y-3">
+                        <div className="flex justify-between items-start gap-2">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            libro.categoria === 'Ingeniería' ? 'bg-blue-100 text-blue-700' :
+                            libro.categoria === 'Literatura' ? 'bg-purple-100 text-purple-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {libro.categoria}
+                          </span>
+                          
+                          <span className={`text-[9px] px-2 py-0.5 font-black rounded uppercase tracking-wider ${
+                            libro.stock > 0 
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                              : 'bg-red-100 text-red-700 border border-red-200'
+                          }`}>
+                            {libro.stock > 0 ? `Disponible (${libro.stock})` : 'Prestado'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="font-extrabold text-sm text-slate-900 leading-snug line-clamp-2" title={libro.titulo}>
+                            {libro.titulo}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1 font-medium">Autor: {libro.autor}</p>
+                          <p className="text-[10px] font-mono text-slate-400 mt-1">ISBN: {libro.isbn}</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50/80 px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => setLibroDetalle(libro)}
+                          className="text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors flex items-center gap-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Ver detalles
+                        </button>
+
+                        <button
+                          onClick={() => solicitarPrestamoEstudiante(libro)}
+                          disabled={libro.stock <= 0}
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all uppercase tracking-wider ${
+                            libro.stock > 0
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                          }`}
+                        >
+                          Solicitar Préstamo
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+                  <p className="font-extrabold text-slate-700 text-sm">No se encontraron libros en esta búsqueda.</p>
+                  <p className="text-xs text-slate-400 mt-1">Intente alternar los filtros de Ingeniería, Literatura o Ciencias.</p>
+                  <button
+                    onClick={() => { setBusqueda(''); setBusquedaAplicada(''); }}
+                    className="mt-4 text-xs font-bold text-emerald-600 hover:underline"
+                  >
+                    Ver catálogo completo
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </section>
+
+          {/* Lado Derecho: Mi Información Relevante (Préstamos Activos) */}
+          <section className="space-y-6">
+            
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
+              <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                <div>
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Mi Información Relevante</h3>
+                  <h2 className="text-base font-bold text-white">Mis Préstamos Activos</h2>
+                </div>
+                <span className="bg-white/10 text-white text-xs px-2.5 py-1 rounded-full border border-white/20 font-bold">
+                  {prestamosEstudianteActivo.length}
+                </span>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {prestamosEstudianteActivo.length > 0 ? (
+                  <div className="space-y-3">
+                    {prestamosEstudianteActivo.map((prestamo) => {
+                      const esRetrasado = prestamo.estado.toLowerCase() === 'retrasado';
+                      return (
+                        <div 
+                          key={prestamo.id} 
+                          className={`p-4 rounded-xl border transition-all ${
+                            esRetrasado 
+                              ? 'bg-red-950/40 border-red-800/60' 
+                              : 'bg-white/5 border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-2">
+                            <h4 className="font-extrabold text-xs text-white line-clamp-2">
+                              "{prestamo.titulo}"
+                            </h4>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-wide ${
+                              esRetrasado 
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            }`}>
+                              {prestamo.estado}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center text-[11px] text-slate-300 mt-2">
+                            <span>Vence el: <strong className="text-white font-semibold">{prestamo.fechaVencimiento}</strong></span>
+                          </div>
+
+                          <div className="mt-3 pt-3 border-t border-white/10 flex gap-2 justify-end">
+                            <button
+                              onClick={() => devolverPrestamoEstudiante(prestamo.id, prestamo.titulo)}
+                              className="px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white text-[10px] font-semibold transition-all"
+                            >
+                              Devolver
+                            </button>
+                            <button
+                              onClick={() => renovarPrestamoEstudiante(prestamo.id, prestamo.titulo)}
+                              className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold transition-all"
+                            >
+                              Renovar plazo
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-400">
+                    <p className="text-xs font-semibold text-slate-300">No registras préstamos en biblioteca.</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Busca un libro en el panel izquierdo y pídelo.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Normas Rápidas de la UNEMI */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <h4 className="font-bold text-slate-900 text-xs tracking-wider uppercase">Normativa de la Biblioteca</h4>
+              <ul className="text-xs text-slate-600 space-y-2 list-disc list-inside">
+                <li>Máximo 3 préstamos de libros de forma simultánea.</li>
+                <li>Sanción de suspensión por atrasos en las fechas de entrega.</li>
+                <li>El carné estudiantil o número de cédula es de uso personal e intransferible.</li>
+              </ul>
+            </div>
+
+          </section>
+
+        </main>
+      )}
+
+
+      {/* --- VISTA: BIBLIOTECARIO (ADMINISTRACIÓN) --- */}
+      {rolActivo === 'bibliotecario' && (
+        <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Lado Izquierdo + Centro: Sub-módulos del Administrador */}
+          <section className="lg:col-span-2 space-y-6">
+            
+            {/* Barra de Sub-Navegación Administrativa */}
+            <div className="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
+              <button
+                onClick={() => setSubModuloAdmin('prestamos')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  subModuloAdmin === 'prestamos'
+                    ? 'bg-blue-900 text-white shadow-md'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                📝 Registro de Préstamos
+              </button>
+              <button
+                onClick={() => setSubModuloAdmin('catalogo')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  subModuloAdmin === 'catalogo'
+                    ? 'bg-blue-900 text-white shadow-md'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                📚 Catálogo y Stock
+              </button>
+              <button
+                onClick={() => setSubModuloAdmin('usuarios')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  subModuloAdmin === 'usuarios'
+                    ? 'bg-blue-900 text-white shadow-md'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                👥 Control de Usuarios
+              </button>
+            </div>
+
+            {/* SUB-MÓDULO 1: REGISTRO DE PRÉSTAMOS EN 3 CLICS */}
+            {subModuloAdmin === 'prestamos' && (
+              <div className="space-y-6">
+                
+                {/* Formulario Principal */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/85 space-y-6 animate-fadeIn">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">Admin</span>
+                      Registrar Nuevo Préstamo (Procesamiento en 3 Clics)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">Complete la secuencia interactiva de validación para asentar préstamos en un clic final.</p>
+                  </div>
+
+                  <form onSubmit={handleProcesarPrestamoAdmin} className="space-y-6">
+                    
+                    {/* PASO 1: ID ESTUDIANTE */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="space-y-1 flex-1 w-full">
+                        <label className="text-xs font-extrabold text-slate-700 block uppercase tracking-wider">1. ID de Matrícula / Cédula del Estudiante</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={idEstudianteInput}
+                            onChange={(e) => {
+                              setIdEstudianteInput(e.target.value);
+                              setEstudianteValidado(null);
+                            }}
+                            placeholder="Ingrese Cédula (Ej. 0912345678)..."
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-950 focus:outline-none w-full font-semibold"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleValidarEstudianteAdmin}
+                            className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap active:scale-95"
+                          >
+                            Clic 1: Validar
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="min-w-[200px] self-stretch md:self-auto flex items-center justify-center bg-white border border-slate-200 rounded-xl p-3 text-center shadow-sm">
+                        {estudianteValidado ? (
+                          <div className="text-left w-full">
+                            <span className="text-[9px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-black uppercase block w-max tracking-wide">✓ Activo / Válido</span>
+                            <p className="text-xs font-black text-slate-800 mt-1">{estudianteValidado.nombre}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">{estudianteValidado.carrera}</p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Pendiente de validación</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* PASO 2: ISBN DEL LIBRO */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="space-y-1 flex-1 w-full">
+                        <label className="text-xs font-extrabold text-slate-700 block uppercase tracking-wider">2. Código ISBN del Libro</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={isbnInput}
+                            onChange={(e) => {
+                              setIsbnInput(e.target.value);
+                              setLibroValidado(null);
+                            }}
+                            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-950 focus:outline-none w-full font-semibold"
+                          >
+                            <option value="">Seleccione un libro disponible...</option>
+                            {libros.map(l => (
+                              <option key={l.id} value={l.isbn}>
+                                {l.titulo} ({l.stock > 0 ? `Stock: ${l.stock}` : 'Sin stock'})
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={handleValidarLibroAdmin}
+                            className="bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap active:scale-95"
+                          >
+                            Clic 2: Verificar
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="min-w-[200px] self-stretch md:self-auto flex items-center justify-center bg-white border border-slate-200 rounded-xl p-3 text-center shadow-sm">
+                        {libroValidado ? (
+                          <div className="text-left w-full">
+                            <span className="text-[9px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-black uppercase block w-max tracking-wide">✓ Stock Disponible</span>
+                            <p className="text-xs font-black text-slate-800 mt-1 line-clamp-1">{libroValidado.titulo}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">{libroValidado.ubicación}</p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Pendiente de verificación</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* PASO 3: FECHA DE DEVOLUCIÓN */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-slate-700 block uppercase tracking-wider">3. Definir Fecha de Devolución</label>
+                        <input
+                          type="date"
+                          value={fechaDevolucion}
+                          onChange={(e) => setFechaDevolucion(e.target.value)}
+                          className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-950 focus:outline-none w-full font-bold"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-center">
+                        <p className="text-[11px] text-slate-500">
+                          * El sistema genera por defecto 15 días posteriores al día de hoy para cumplir con las normativas académicas vigentes.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* PROCESAR PRÉSTAMO */}
+                    <div className="flex justify-end pt-3">
+                      <button
+                        type="submit"
+                        disabled={!estudianteValidado || !libroValidado}
+                        className={`w-full sm:w-auto font-black px-8 py-3.5 rounded-xl transition-all shadow text-xs uppercase tracking-widest ${
+                          estudianteValidado && libroValidado
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white cursor-pointer active:scale-95'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        Clic 3: Procesar Préstamo Nuevo
+                      </button>
+                    </div>
+
+                  </form>
+                </div>
+
+                {/* Tabla de Control de Préstamos Vigentes */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/85">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Préstamos Vigentes del Período</h3>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                          <th className="p-3 font-bold">Estudiante</th>
+                          <th className="p-3 font-bold">Libro Prestado</th>
+                          <th className="p-3 font-bold">F. Vencimiento</th>
+                          <th className="p-3 font-bold">Estado</th>
+                          <th className="p-3 font-bold text-right">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {prestamos.map(p => {
+                          const estudianteAsociado = estudiantes.find(e => e.cedula === p.estudianteCedula);
+                          const esRetrasado = p.estado.toLowerCase() === 'retrasado';
+                          return (
+                            <tr key={p.id} className="hover:bg-slate-50/50">
+                              <td className="p-3">
+                                <p className="font-extrabold text-slate-800">{estudianteAsociado?.nombre || 'Estudiante Externo'}</p>
+                                <p className="text-[10px] text-slate-500 font-mono">CI: {p.estudianteCedula}</p>
+                              </td>
+                              <td className="p-3 font-semibold text-slate-800">{p.titulo}</td>
+                              <td className="p-3 text-slate-600 font-mono">{p.fechaVencimiento}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                  esRetrasado ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                }`}>
+                                  {p.estado}
+                                </span>
+                              </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  onClick={() => cancelarPrestamoAdmin(p.id, p.titulo, estudianteAsociado?.nombre || 'Estudiante')}
+                                  className="text-xs font-bold text-red-600 hover:text-red-800 hover:underline"
+                                >
+                                  Procesar Retorno
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-MÓDULO 2: CATÁLOGO Y EDICIÓN DE STOCK */}
+            {subModuloAdmin === 'catalogo' && (
+              <div className="space-y-6">
+                
+                {/* Registro de Nuevos Textos */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4">Ingreso de Nuevo Libro</h3>
+                  
+                  <form onSubmit={handleCrearLibroAdmin} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Título del Libro *</label>
+                      <input
+                        type="text"
+                        required
+                        value={nuevoLibro.titulo}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, titulo: e.target.value})}
+                        placeholder="Ej. Estructuras de Datos"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Autor *</label>
+                      <input
+                        type="text"
+                        required
+                        value={nuevoLibro.autor}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, autor: e.target.value})}
+                        placeholder="Ej. Luis Joyanes Aguilar"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">ISBN del Libro *</label>
+                      <input
+                        type="text"
+                        required
+                        value={nuevoLibro.isbn}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, isbn: e.target.value})}
+                        placeholder="Ej. 978-84-481-5631-2"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Categoría</label>
+                      <select
+                        value={nuevoLibro.categoria}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, categoria: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-bold"
+                      >
+                        <option value="Ingeniería">Ingeniería</option>
+                        <option value="Literatura">Literatura</option>
+                        <option value="Ciencias">Ciencias</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Unidades Iniciales</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={nuevoLibro.stock}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, stock: parseInt(e.target.value) || 0})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-bold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Ubicación Física</label>
+                      <input
+                        type="text"
+                        value={nuevoLibro.ubicación}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, ubicación: e.target.value})}
+                        placeholder="Ej. Estante A-5, Piso 2"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-semibold"
+                      />
+                    </div>
+                    <div className="md:col-span-3 space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Breve Sinopsis</label>
+                      <textarea
+                        value={nuevoLibro.sinopsis}
+                        onChange={(e) => setNuevoLibro({...nuevoLibro, sinopsis: e.target.value})}
+                        placeholder="Describa brevemente el alcance académico del libro..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white h-20 resize-none font-medium"
+                      />
+                    </div>
+                    <div className="md:col-span-3 flex justify-end">
+                      <button
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-6 py-2 rounded-lg transition-all uppercase tracking-wider"
+                      >
+                        Añadir al Catálogo
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Tabla de Control Directo de Stock */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Gestión Directa de Copias Físicas</h3>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                          <th className="p-3 font-bold">Título / Autor</th>
+                          <th className="p-3 font-bold">Código ISBN</th>
+                          <th className="p-3 font-bold">Ubicación Estantería</th>
+                          <th className="p-3 font-bold text-center w-36">Unidades Disponibles</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {libros.map(libro => (
+                          <tr key={libro.id} className="hover:bg-slate-50/50">
+                            <td className="p-3">
+                              <p className="font-extrabold text-slate-800">{libro.titulo}</p>
+                              <p className="text-[10px] text-slate-500">{libro.autor}</p>
+                            </td>
+                            <td className="p-3 font-mono text-slate-600">{libro.isbn}</td>
+                            <td className="p-3 text-slate-600">{libro.ubicación}</td>
+                            <td className="p-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => modificarStockDirecto(libro.id, libro.stock - 1)}
+                                  className="w-7 h-7 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 rounded-lg font-black text-sm transition-all"
+                                >
+                                  -
+                                </button>
+                                <span className="w-8 text-center font-extrabold text-slate-800">{libro.stock}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => modificarStockDirecto(libro.id, libro.stock + 1)}
+                                  className="w-7 h-7 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 rounded-lg font-black text-sm transition-all"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-MÓDULO 3: CONTROL DE USUARIOS */}
+            {subModuloAdmin === 'usuarios' && (
+              <div className="space-y-6">
+                
+                {/* Registrar Alumno */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4">Agregar Nuevo Alumno</h3>
+                  
+                  <form onSubmit={handleCrearEstudianteAdmin} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Cédula del Alumno *</label>
+                      <input
+                        type="text"
+                        required
+                        value={nuevoEstudiante.cedula}
+                        onChange={(e) => setNuevoEstudiante({...nuevoEstudiante, cedula: e.target.value})}
+                        placeholder="Ej. 0912345678"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Nombre Completo *</label>
+                      <input
+                        type="text"
+                        required
+                        value={nuevoEstudiante.nombre}
+                        onChange={(e) => setNuevoEstudiante({...nuevoEstudiante, nombre: e.target.value})}
+                        placeholder="Ej. Bryan Alexander Mora"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Carrera</label>
+                      <select
+                        value={nuevoEstudiante.carrera}
+                        onChange={(e) => setNuevoEstudiante({...nuevoEstudiante, carrera: e.target.value})}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:bg-white font-bold"
+                      >
+                        <option value="Ingeniería de Software">Ingeniería de Software</option>
+                        <option value="Tecnologías de la Información">Tecnologías de la Información</option>
+                        <option value="Ciencias de la Educación">Ciencias de la Educación</option>
+                        <option value="Licenciatura en Enfermería">Licenciatura en Enfermería</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-4 flex justify-end pt-2">
+                      <button
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-6 py-2 rounded-lg transition-all uppercase tracking-wider"
+                      >
+                        Añadir Estudiante
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Lista Completa de Alumnos */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Padron General de Matrículas</h3>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                          <th className="p-3 font-bold">Cédula</th>
+                          <th className="p-3 font-bold">Nombre del Alumno</th>
+                          <th className="p-3 font-bold">Carrera Universitaria</th>
+                          <th className="p-3 font-bold">Estado Matrícula</th>
+                          <th className="p-3 font-bold text-right">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {estudiantes.map((est, index) => {
+                          const prestamosActivos = prestamos.filter(p => p.estudianteCedula === est.cedula).length;
+                          return (
+                            <tr key={index} className="hover:bg-slate-50/50">
+                              <td className="p-3 font-mono text-slate-700">{est.cedula}</td>
+                              <td className="p-3">
+                                <p className="font-extrabold text-slate-900">{est.nombre}</p>
+                                <p className="text-[10px] text-slate-500">Préstamos Vigentes: {prestamosActivos}</p>
+                              </td>
+                              <td className="p-3 text-slate-600">{est.carrera}</td>
+                              <td className="p-3">
+                                <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                  est.estado === 'Activo' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {est.estado}
+                                </span>
+                              </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEstudiantes(prev => prev.map((e, idx) => {
+                                      if (idx === index) {
+                                        const nuevoEstado = e.estado === 'Activo' ? 'Inactivo' : 'Activo';
+                                        agregarLog(`Se cambió matrícula de ${e.nombre} a '${nuevoEstado}'.`);
+                                        return { ...e, estado: nuevoEstado };
+                                      }
+                                      return e;
+                                    }));
+                                    mostrarNotificacion("Estado estudiantil actualizado con éxito.", "info");
+                                  }}
+                                  className="text-xs font-bold text-blue-900 hover:underline"
+                                >
+                                  Alternar Estado
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+          </section>
+
+          {/* Lado Derecho: Auditoría y Cuentas de Demostración */}
+          <section className="space-y-6">
+            
+            {/* Log de Auditoría en Vivo */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-xl border border-slate-700 overflow-hidden">
+              <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                <div>
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Auditoría de Procesos</h3>
+                  <h2 className="text-base font-bold text-white">Log de Cambios Recientes</h2>
+                </div>
+                <span className="bg-white/10 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded border border-white/10 uppercase tracking-widest font-mono">
+                  En Vivo
+                </span>
+              </div>
+
+              {/* Lista Scrollable de Logs */}
+              <div className="p-5 space-y-3 max-h-[360px] overflow-y-auto scrollbar-thin">
+                {logs.length > 0 ? (
+                  logs.map((log, index) => (
+                    <div key={index} className="p-3 rounded-lg bg-white/5 border border-white/10 flex items-start gap-2 text-xs">
+                      <span className="text-emerald-400 font-mono font-extrabold">[{log.hora}]</span>
+                      <p className="text-slate-200 leading-snug">{log.accion}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic text-center py-4">No se registran transacciones en este módulo.</p>
+                )}
+              </div>
+
+              {/* Vaciar Logs */}
+              <div className="bg-white/5 p-4 border-t border-white/10 flex justify-end">
+                <button
+                  onClick={() => { setLogs([]); mostrarNotificacion("Se vació el log de auditoría.", "info"); }}
+                  className="text-[10px] font-extrabold text-slate-400 hover:text-white transition-colors uppercase tracking-wider"
+                >
+                  Vaciar Historial de Log
+                </button>
+              </div>
+            </div>
+
+            {/* Accesos Rápidos de Demostración */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <h4 className="font-extrabold text-slate-900 text-xs tracking-wider uppercase">Cuentas de Pruebas de Alumnos</h4>
+              <p className="text-xs text-slate-500">Utiliza estas identificaciones reales de estudiantes en el Paso 1 para validar tus flujos rápidos:</p>
+              
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="font-extrabold text-slate-800">Juan Pérez Solís (Válido)</p>
+                  <p className="text-slate-500 font-semibold font-mono">CI: 0912345678</p>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="font-extrabold text-slate-800">María Castro Santos (Válido)</p>
+                  <p className="text-slate-500 font-semibold font-mono">CI: 0987654321</p>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="font-extrabold text-slate-800">Carlos Ortiz Mora (Inactivo / Mora)</p>
+                  <p className="text-slate-500 font-semibold font-mono">CI: 0955443322</p>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+        </main>
+      )}
+
+
+      {/* --- FOOTER INSTITUCIONAL DE LA UNEMI --- */}
+      <footer className="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-white uppercase tracking-wider">UNEMI Biblioteca Virtual</span>
+            <span className="text-slate-700">|</span>
+            <span>© {new Date().getFullYear()} Universidad Estatal de Milagro.</span>
+          </div>
+          <div className="flex gap-4">
+            <a 
+              href="#soporte" 
+              onClick={(e) => { e.preventDefault(); mostrarNotificacion("Dirección de Soporte Técnico: biblioteca@unemi.edu.ec", "info"); }} 
+              className="hover:text-white transition-colors"
+            >
+              Soporte Técnico
+            </a>
+            <span>•</span>
+            <a 
+              href="#portal" 
+              onClick={(e) => { e.preventDefault(); mostrarNotificacion("Redirigiendo virtualmente al portal principal unemi.edu.ec", "info"); }} 
+              className="hover:text-white text-emerald-400 transition-colors font-bold"
+            >
+              Portal UNEMI
+            </a>
+          </div>
+        </div>
+      </footer>
+
+
+      {/* --- MODAL INTERACTIVO DE DETALLES DEL LIBRO --- */}
+      {libroDetalle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
+            
+            {/* Header del Modal */}
+            <div className="p-6 bg-slate-900 text-white flex justify-between items-start">
+              <div>
+                <span className="text-[9px] bg-emerald-500 text-white font-black uppercase px-2.5 py-0.5 rounded tracking-wider">
+                  {libroDetalle.categoria}
+                </span>
+                <h3 className="text-base font-black text-white mt-2 leading-snug">
+                  {libroDetalle.titulo}
+                </h3>
+                <p className="text-xs text-slate-300 mt-1">Escrito por: <strong>{libroDetalle.autor}</strong></p>
+              </div>
+              <button 
+                onClick={() => setLibroDetalle(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+                aria-label="Cerrar modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Contenido del Detalle */}
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold uppercase text-slate-400">Sinopsis del Texto</h4>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  {libroDetalle.sinopsis}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50">
+                  <h5 className="text-[9px] font-extrabold uppercase text-slate-400">Código ISBN</h5>
+                  <p className="text-xs font-mono font-bold text-slate-800 mt-0.5">{libroDetalle.isbn}</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50">
+                  <h5 className="text-[9px] font-extrabold uppercase text-slate-400">Edición</h5>
+                  <p className="text-xs font-bold text-slate-800 mt-0.5">{libroDetalle.edicion}</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50">
+                  <h5 className="text-[9px] font-extrabold uppercase text-slate-400">Ubicación Física</h5>
+                  <p className="text-xs font-semibold text-emerald-700 mt-0.5">{libroDetalle.ubicación}</p>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50">
+                  <h5 className="text-[9px] font-extrabold uppercase text-slate-400">Ejemplares en Stock</h5>
+                  <p className="text-xs font-black text-slate-800 mt-0.5">{libroDetalle.stock} copias físicas</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Acciones */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setLibroDetalle(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 transition-colors uppercase tracking-wider"
+              >
+                Cerrar Ventana
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  solicitarPrestamoEstudiante(libroDetalle);
+                  setLibroDetalle(null);
+                }}
+                disabled={libroDetalle.stock <= 0}
+                className={`px-5 py-2 text-xs font-black rounded-xl transition-all uppercase tracking-wider ${
+                  libroDetalle.stock > 0
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                Solicitar Préstamo Ahora
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
